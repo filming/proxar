@@ -1,4 +1,7 @@
 import logging
+from pathlib import Path
+
+from .handlers.storage import StorageHandler
 
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
@@ -12,6 +15,12 @@ class Proxar:
     and source aggregation.
     """
 
-    def __init__(self) -> None:
-        """Initialize the Proxar instance."""
-        logger.info("Proxar instance has been initialized.")
+    def __init__(self, storage_dir: str | Path | None = None):
+        """Initialize the Proxar instance.
+
+        Args:
+            storage_dir (str | Path | None): The path to store proxy
+                files. Defaults to None.
+        """
+        self.storage_manager = StorageHandler(storage_dir)
+        logger.info("Proxar has been initialized.")
