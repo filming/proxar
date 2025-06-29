@@ -9,5 +9,8 @@ wheels/
 # Virtual environments
 .venv
 
-# Misc
+# Personal
 devarea/
+
+# macOS files
+.DS_Store

@@ -1,4 +1,4 @@
-name: Release
+name: Release and Publish
 
 on:
   push:
@@ -15,9 +15,10 @@ jobs:
       # Prevent the workflow from running on its own commits
       if: ${{ !contains(github.event.head_commit.message, 'chore(release):') }}
       runs-on: ubuntu-latest
-      name: "Bump version and create changelog"
+      name: "Bump version, create changelog, and publish"
       permissions:
         contents: write
+        id-token: write
 
       steps:
       - name: Checkout repository
@@ -34,7 +35,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install commitizen
+          pip install commitizen hatch
 
       - name: Configure Git
         run: |
@@ -67,3 +68,9 @@ jobs:
         with:
           tag_name: ${{ steps.cz.outputs.tag }}
           body: ${{ steps.changelog.outputs.content }}
+
+      - name: Build package
+        run: hatch build
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
