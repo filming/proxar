@@ -8,7 +8,10 @@ version = "0.1.2"
 description = "A Python client for fetching public proxies from multiple sources."
 readme = "README.md"
 requires-python = ">=3.10"
-dependencies = []
+dependencies = [
+    "aiohttp>=3.12.13",
+    "platformdirs>=4.3.8",
+]
 license = {file = "LICENSE"}
 authors = [
     {name = "Filming"}
