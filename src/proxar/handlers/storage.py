@@ -103,3 +103,24 @@ class StorageHandler:
 
         except (OSError, json.JSONDecodeError) as e:
             raise ProxarStorageError(f"Failed to load proxies from disk: {e}") from e
+
+    async def store_proxy(self, proxy_type: str, proxy: str) -> None:
+        """Add a proxy to the appropriate in-memory set if it is unique.
+
+        Args:
+            proxy_type: The type of proxy to store.
+            proxy: The proxy string to store.
+
+        Raises:
+            ProxarStorageError: If the provided proxy_type is not supported.
+        """
+        proxy_type = proxy_type.lower()
+        resources = self.proxy_resources.get(proxy_type)
+
+        if not resources:
+            raise ProxarStorageError(f"Unknown proxy type '{proxy_type}'.")
+
+        async with resources.lock:
+            if proxy not in resources.proxies:
+                resources.proxies.add(proxy)
+                self._dirty = True
