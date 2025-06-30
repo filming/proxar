@@ -2,6 +2,15 @@
 
 All notable changes to Xify will be documented in this file.
 
+## v0.4.0 (2025-06-30)
+
+### Features
+
+- **fetch**: add proxy fetching functionality
+- **config**: add project config python file
+- **errors**: add fetch related custom errors
+- **fetch**: introduce fetch handler into project
+
 ## v0.3.0 (2025-06-30)
 
 ### Code Refactoring
