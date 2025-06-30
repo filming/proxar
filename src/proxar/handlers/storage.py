@@ -7,7 +7,7 @@ logger = logging.getLogger(__name__)
 
 
 class StorageHandler:
-    """Handle storage operations."""
+    """Handle persistent, asynchronous storage of proxies in a JSON file."""
 
     def __init__(self, storage_dir: str | Path | None):
         """Initialize the storage handler instance.
