@@ -1,9 +1,23 @@
+import asyncio
 import logging
+from dataclasses import dataclass, field
 from pathlib import Path
 
 import platformdirs
 
 logger = logging.getLogger(__name__)
+
+
+@dataclass
+class ProxyResources:
+    """Represents the resources for a single proxy type.
+
+    This includes a thread-safe lock for concurrent operations and a set of
+    proxy strings to ensure uniqueness.
+    """
+
+    lock: asyncio.Lock = field(default_factory=asyncio.Lock)
+    proxies: set[str] = field(default_factory=set)
 
 
 class StorageHandler:
@@ -32,3 +46,11 @@ class StorageHandler:
 
         self.storage_dir_path.mkdir(parents=True, exist_ok=True)
         self.json_file_path = self.storage_dir_path / "proxies.json"
+
+        # Proxy types mapped to their associated resource instances.
+        self.proxy_resources: dict[str, ProxyResources] = {
+            "http": ProxyResources(),
+            "https": ProxyResources(),
+            "socks4": ProxyResources(),
+            "socks5": ProxyResources(),
+        }
