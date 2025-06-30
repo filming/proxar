@@ -1,6 +1,7 @@
 import logging
 from pathlib import Path
 
+from .handlers.fetch import FetchHandler
 from .handlers.storage import StorageHandler
 
 logger = logging.getLogger(__name__)
@@ -21,5 +22,7 @@ class Proxar:
         Args:
             storage_dir: The path to store proxy files. Defaults to None.
         """
-        self.storage_manager = StorageHandler(storage_dir)
+        self.storage_handler = StorageHandler(storage_dir)
+        self.fetch_handler = FetchHandler(self.storage_handler)
+
         logger.info("Proxar has been initialized.")
