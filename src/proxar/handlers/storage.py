@@ -4,6 +4,7 @@ import logging
 from dataclasses import dataclass, field
 from pathlib import Path
 
+import aiofiles
 import platformdirs
 
 from ..errors import ProxarStorageError
@@ -124,3 +125,57 @@ class StorageHandler:
             if proxy not in resources.proxies:
                 resources.proxies.add(proxy)
                 self._dirty = True
+
+    def _get_all_proxies_as_dict(self) -> dict[str, list[str]]:
+        """Gathers all proxies from memory into one dictionary.
+
+        Returns:
+            Dictionary mapping proxy types to lists of proxy strings.
+        """
+        return {
+            proxy_type: list(res.proxies)
+            for proxy_type, res in self.proxy_resources.items()
+        }
+
+    async def save(self) -> None:
+        """Asynchronously and atomically saves all proxies to the JSON file.
+
+        Raises:
+            ProxarStorageError: If the file cannot be written to disk due to I/O or
+                permission errors.
+        """
+        if not self._dirty:
+            logger.debug("No new proxies to save, skipping write to disk.")
+            return
+
+        all_proxies_data = self._get_all_proxies_as_dict()
+        temp_file_path = self.json_file_path.with_suffix(".json.tmp")
+
+        try:
+            async with aiofiles.open(temp_file_path, "w", encoding="utf-8") as f:
+                await f.write(json.dumps(all_proxies_data, indent=2))
+
+            temp_file_path.rename(self.json_file_path)
+            self._dirty = False  # Reset dirty flag after successful save.
+
+            count_summary = ", ".join(
+                f"{len(proxies)} {proxy_type.upper()}"
+                for proxy_type, proxies in all_proxies_data.items()
+                if proxies
+            )
+            total_proxies = sum(len(p) for p in all_proxies_data.values())
+
+            logger.info(
+                "Successfully saved %d proxies (%s) to %s",
+                total_proxies,
+                count_summary,
+                self.json_file_path,
+            )
+
+        except OSError as e:
+            raise ProxarStorageError(f"Failed to save proxies to disk: {e}") from e
+
+        finally:
+            # Ensure the temporary file is cleaned up, even if an error occurs.
+            if temp_file_path.exists():
+                temp_file_path.unlink()
