@@ -15,12 +15,11 @@ class Proxar:
     and source aggregation.
     """
 
-    def __init__(self, storage_dir: str | Path | None = None):
+    def __init__(self, storage_dir: str | Path | None = None) -> None:
         """Initialize the Proxar instance.
 
         Args:
-            storage_dir (str | Path | None): The path to store proxy
-                files. Defaults to None.
+            storage_dir: The path to store proxy files. Defaults to None.
         """
         self.storage_manager = StorageHandler(storage_dir)
         logger.info("Proxar has been initialized.")
