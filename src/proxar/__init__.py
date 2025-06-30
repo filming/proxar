@@ -26,3 +26,9 @@ class Proxar:
         self.fetch_handler = FetchHandler(self.storage_handler)
 
         logger.info("Proxar has been initialized.")
+
+    async def get_proxies(self) -> None:
+        """Fetch proxies from various sources and save them."""
+        logger.info("Starting proxy fetching process.")
+        await self.fetch_handler.get_proxies()
+        logger.info("Proxy fetching process has finished.")
