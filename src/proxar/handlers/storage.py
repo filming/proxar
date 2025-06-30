@@ -26,7 +26,7 @@ class ProxyResources:
 
 
 class StorageHandler:
-    """Handle persistent, asynchronous storage of proxies in a JSON file."""
+    """Handle persistent storage of proxies into a JSON file."""
 
     def __init__(self, storage_dir: str | Path | None) -> None:
         """Initializes the StorageHandler instance.
