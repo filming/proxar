@@ -1,4 +1,5 @@
 import asyncio
+import atexit
 import json
 import logging
 from dataclasses import dataclass, field
@@ -60,6 +61,9 @@ class StorageHandler:
         }
 
         self._load_proxies_from_disk()
+
+        # Register the synchronous save as a fallback on graceful exit.
+        atexit.register(self._save_proxies_to_disk_sync)
 
         logger.debug("StorageHandler has been initialized.")
 
@@ -174,6 +178,50 @@ class StorageHandler:
 
         except OSError as e:
             raise ProxarStorageError(f"Failed to save proxies to disk: {e}") from e
+
+        finally:
+            # Ensure the temporary file is cleaned up, even if an error occurs.
+            if temp_file_path.exists():
+                temp_file_path.unlink()
+
+    def _save_proxies_to_disk_sync(self) -> None:
+        """Synchronously saves all proxies to disk as a fallback.
+
+        Raises:
+            ProxarStorageError: If the file cannot be written to disk due to I/O or
+                permission errors.
+        """
+        if not self._dirty:
+            return
+
+        all_proxies_data = self._get_all_proxies_as_dict()
+        temp_file_path = self.json_file_path.with_suffix(".json.tmp")
+
+        try:
+            with open(temp_file_path, "w", encoding="utf-8") as f:
+                json.dump(all_proxies_data, f, indent=2)
+
+            temp_file_path.rename(self.json_file_path)
+            self._dirty = False
+
+            count_summary = ", ".join(
+                f"{len(proxies)} {proxy_type.upper()}"
+                for proxy_type, proxies in all_proxies_data.items()
+                if proxies
+            )
+            total_proxies = sum(len(p) for p in all_proxies_data.values())
+
+            logger.info(
+                "Shutdown hook: Saved %d proxies (%s) to %s",
+                total_proxies,
+                count_summary,
+                self.json_file_path,
+            )
+
+        except OSError as e:
+            raise ProxarStorageError(
+                f"Shutdown hook: Failed to save proxies to disk: {e}"
+            ) from e
 
         finally:
             # Ensure the temporary file is cleaned up, even if an error occurs.
