@@ -1,9 +1,12 @@
 import asyncio
+import json
 import logging
 from dataclasses import dataclass, field
 from pathlib import Path
 
 import platformdirs
+
+from ..errors import ProxarStorageError
 
 logger = logging.getLogger(__name__)
 
@@ -55,4 +58,48 @@ class StorageHandler:
             "socks5": ProxyResources(),
         }
 
+        self._load_proxies_from_disk()
+
         logger.debug("StorageHandler has been initialized.")
+
+    def _load_proxies_from_disk(self) -> None:
+        """Loads proxies from the JSON file into their in-memory sets.
+
+        Raises:
+            ProxarStorageError: If there's an issue loading proxies from the disk
+                file, such as a JSON decoding or I/O errors.
+        """
+        if not self.json_file_path.exists():
+            logger.debug(
+                "Storage file not found at %s, starting fresh.", self.json_file_path
+            )
+            return
+
+        try:
+            with open(self.json_file_path, encoding="utf-8") as f:
+                data = json.load(f)
+
+            total_proxies_loaded = 0
+            for proxy_type, proxies in data.items():
+                if proxy_type in self.proxy_resources and isinstance(proxies, list):
+                    unique_proxies = set(proxies)
+                    self.proxy_resources[proxy_type].proxies.update(unique_proxies)
+                    total_proxies_loaded += len(unique_proxies)
+
+            if total_proxies_loaded > 0:
+                count_summary = ", ".join(
+                    f"{len(proxies)} {proxy_type.upper()}"
+                    for proxy_type, proxies in data.items()
+                    if proxies
+                )
+                logger.info(
+                    "Loaded %d proxies (%s) from %s",
+                    total_proxies_loaded,
+                    count_summary,
+                    self.json_file_path,
+                )
+            else:
+                logger.debug("Storage file at %s was empty.", self.json_file_path)
+
+        except (OSError, json.JSONDecodeError) as e:
+            raise ProxarStorageError(f"Failed to load proxies from disk: {e}") from e
