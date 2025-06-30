@@ -54,3 +54,5 @@ class StorageHandler:
             "socks4": ProxyResources(),
             "socks5": ProxyResources(),
         }
+
+        logger.debug("StorageHandler has been initialized.")
