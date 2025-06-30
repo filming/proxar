@@ -141,7 +141,7 @@ class StorageHandler:
             for proxy_type, res in self.proxy_resources.items()
         }
 
-    async def save(self) -> None:
+    async def _save(self) -> None:
         """Asynchronously and atomically saves all proxies to the JSON file.
 
         Raises:
