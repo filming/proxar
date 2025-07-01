@@ -39,8 +39,11 @@ class FetchHandler:
 
             for i, result in enumerate(results):
                 if isinstance(result, Exception):
-                    logger.exception(
-                        "Task '%s' raised an exception: %s", task_names[i], result
+                    logger.error(
+                        "Task '%s' raised an exception: %s",
+                        task_names[i],
+                        result,
+                        exc_info=result,
                     )
 
         logger.debug("Fetching proxy process completed.")
