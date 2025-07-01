@@ -1,4 +1,4 @@
-class ProxarError(BaseException):
+class ProxarError(Exception):
     """Base exception class for all Proxar related errors."""
 
     pass
