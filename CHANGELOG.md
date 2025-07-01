@@ -2,6 +2,17 @@
 
 All notable changes to Xify will be documented in this file.
 
+## v0.6.0 (2025-07-01)
+
+### Bug Fixes
+
+- **fetch**: correct logging form
+- **errors**: custom errors use exception class
+
+### Features
+
+- **source**: add geonode
+
 ## v0.5.0 (2025-07-01)
 
 ### Code Refactoring
