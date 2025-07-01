@@ -2,6 +2,17 @@
 
 All notable changes to Xify will be documented in this file.
 
+## v0.5.0 (2025-07-01)
+
+### Code Refactoring
+
+- **config**: remove unneeded header fields
+- **storage**: signal save method to be used internally
+
+### Features
+
+- **source**: add proxyscrape as a source
+
 ## v0.4.0 (2025-06-30)
 
 ### Features
