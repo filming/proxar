@@ -17,12 +17,14 @@ logger = logging.getLogger(__name__)
 class ProxyResources:
     """Represents the resources for a single proxy type.
 
-    This includes a thread-safe lock for concurrent operations and a set of
-    proxy strings to ensure uniqueness.
+    This includes a thread-safe lock for concurrent operations, a set of
+    proxy strings to ensure uniqueness and a counter for new proxies
+    acquired during the program's execution.
     """
 
     lock: asyncio.Lock = field(default_factory=asyncio.Lock)
     proxies: set[str] = field(default_factory=set)
+    newly_added: int = 0
 
 
 class StorageHandler:
@@ -128,10 +130,11 @@ class StorageHandler:
         async with resources.lock:
             if proxy not in resources.proxies:
                 resources.proxies.add(proxy)
+                resources.newly_added += 1
                 self._dirty = True
 
     def _get_all_proxies_as_dict(self) -> dict[str, list[str]]:
-        """Gathers all proxies from memory into one dictionary.
+        """Gather all proxies from memory into one dictionary.
 
         Returns:
             Dictionary mapping proxy types to lists of proxy strings.
@@ -140,6 +143,23 @@ class StorageHandler:
             proxy_type: list(res.proxies)
             for proxy_type, res in self.proxy_resources.items()
         }
+
+    def _get_newly_added_summary(self) -> tuple[int, dict[str, int]]:
+        """Return total and per-type count of newly added proxies."""
+        summary = {
+            proxy_type: res.newly_added
+            for proxy_type, res in self.proxy_resources.items()
+            if res.newly_added > 0
+        }
+
+        total = sum(summary.values())
+
+        return total, summary
+
+    def _reset_newly_added(self) -> None:
+        """Reset the newly added counters for all proxy types."""
+        for res in self.proxy_resources.values():
+            res.newly_added = 0
 
     async def _save(self) -> None:
         """Asynchronously and atomically saves all proxies to the JSON file.
@@ -175,6 +195,17 @@ class StorageHandler:
                 count_summary,
                 self.json_file_path,
             )
+
+            total_new, new_summary = self._get_newly_added_summary()
+
+            if total_new > 0:
+                logger.info(
+                    "This run: %d new proxies added (%s)",
+                    total_new,
+                    ", ".join(f"{v} {k.upper()}" for k, v in new_summary.items()),
+                )
+
+            self._reset_newly_added()
 
         except OSError as e:
             raise ProxarStorageError(f"Failed to save proxies to disk: {e}") from e
@@ -217,6 +248,17 @@ class StorageHandler:
                 count_summary,
                 self.json_file_path,
             )
+
+            total_new, new_summary = self._get_newly_added_summary()
+
+            if total_new > 0:
+                logger.info(
+                    "This run: %d new proxies added (%s)",
+                    total_new,
+                    ", ".join(f"{v} {k.upper()}" for k, v in new_summary.items()),
+                )
+
+            self._reset_newly_added()
 
         except OSError as e:
             raise ProxarStorageError(
