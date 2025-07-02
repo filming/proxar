@@ -2,6 +2,12 @@
 
 All notable changes to Xify will be documented in this file.
 
+## v0.6.1 (2025-07-02)
+
+### Bug Fixes
+
+- **source**: improve proxyscrape fetching process
+
 ## v0.6.0 (2025-07-01)
 
 ### Bug Fixes
