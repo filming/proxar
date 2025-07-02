@@ -5,7 +5,7 @@ from collections.abc import Awaitable
 import aiohttp
 
 from ..config import HEADERS
-from ..sources import geonode, proxyscrape
+from ..sources import free_proxy_list, geonode, proxyscrape
 from .storage import StorageHandler
 
 logger = logging.getLogger(__name__)
@@ -32,6 +32,7 @@ class FetchHandler:
             tasks: dict[str, Awaitable[None]] = {
                 "proxyscrape": proxyscrape.get(session, self.storage_handler),
                 "geonode": geonode.get(session, self.storage_handler),
+                "free_proxy_list": free_proxy_list.get(session, self.storage_handler),
             }
 
             results = await asyncio.gather(*tasks.values(), return_exceptions=True)
