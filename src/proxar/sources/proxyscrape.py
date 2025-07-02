@@ -1,6 +1,8 @@
 import asyncio
 import logging
+from math import ceil
 from pathlib import Path
+from urllib.parse import urlencode
 
 import aiohttp
 
@@ -63,20 +65,24 @@ async def get_proxies(
 
     except aiohttp.ClientError as e:
         raise ProxarFetchError(
-            f"Aiohttp client error while fetching proxies from {url} in {method_name}."
+            f"Aiohttp error while fetching proxies from {url} in {method_name}."
         ) from e
 
     except Exception as e:
         raise ProxarFetchError(
-            f"Error occurred while fetching proxies from {url} in {method_name}."
+            f"Error while fetching proxies from {url} in {method_name}."
         ) from e
 
 
-async def get_urls(session: aiohttp.ClientSession) -> list[str]:
-    """Get a list of sub-URLs required to fetch all the proxies from a website.
+async def get_urls(
+    session: aiohttp.ClientSession, url: str, params: dict[str, str]
+) -> list[str]:
+    """Get a list of sub-URLs required to fetch all proxies.
 
     Args:
         session: The client session used for making requests.
+        url: The URL to fetch sub-URLs from.
+        params: The query parameters for the URL.
 
     Raises:
         ProxarFetchError: If the URL returns a bad response, a timeout
@@ -85,44 +91,49 @@ async def get_urls(session: aiohttp.ClientSession) -> list[str]:
     Returns:
         A list containing strings.
     """
-    logger.debug("Attempting to find all sub-URLs for %s.", method_name)
+    logger.debug(
+        "Attempting to find all sub-URLs for %s (%s) in %s.", url, params, method_name
+    )
 
     try:
         # Send HTTP request for URLs
-        url = "https://api.proxyscrape.com/v4/free-proxy-list/get?request=display_proxies&proxy_format=protocolipport&format=json"
-        async with session.get(url) as response:
+        async with session.get(url, params=params) as response:
             json_data = await response.json()
 
         if json_data:
             # Parse URLs
-            url_count = json_data["total_records"] // 2000
-            urls = [f"{url}&skip={i * 2000}" for i in range(url_count + 1)]
+            url_count = ceil(json_data["total_records"] / 500)
+            urls = []
 
-            logger.debug("Found %s sub-URLs for %s.", len(urls), method_name)
+            for _ in range(url_count):
+                urls.append(f"{url}?{urlencode(params)}")
+                params["skip"] = str(int(params["skip"]) + 500)
+
             return urls
+
         else:
             raise ProxarFetchError(
-                f"Unable to get response from {url} in {method_name}."
+                f"Unable to get response from {url} ({params}) in {method_name}."
             )
 
     except asyncio.TimeoutError as e:
         raise ProxarFetchError(
-            f"Timed out while getting URLs from {url} in {method_name}."
+            f"Timed out while getting URLs from {url} ({params}) in {method_name}."
         ) from e
 
     except aiohttp.ClientError as e:
         raise ProxarFetchError(
-            f"Aiohttp client error while getting URLs from {url} in {method_name}."
+            f"Aiohttp error while getting URLs from {url} ({params}) in {method_name}."
         ) from e
 
     except Exception as e:
         raise ProxarFetchError(
-            f"Error occurred while getting URLs from {url} in {method_name}."
+            f"Error while getting URLs from {url} ({params}) in {method_name}."
         ) from e
 
 
 async def get(session: aiohttp.ClientSession, storage_handler: StorageHandler) -> None:
-    """Handle the fetching and storing of proxies from Proxyscrape.
+    """Handle the operations of fetching and storing of proxies.
 
     Args:
         session: The client session used for making requests.
@@ -130,7 +141,19 @@ async def get(session: aiohttp.ClientSession, storage_handler: StorageHandler) -
     """
     logger.debug("Attempting to fetch proxies from %s.", method_name)
 
-    urls = await get_urls(session)
+    # Get all the sub-URLs containing proxies
+    base_url = "https://api.proxyscrape.com/v4/free-proxy-list/get"
+    params = {
+        "request": "get_proxies",
+        "protocol": "http,socks4,socks5",
+        "proxy_format": "protocolipport",
+        "format": "json",
+        "timeout": "20",
+        "limit": "500",
+        "skip": "0",
+    }
+
+    urls = await get_urls(session, base_url, params)
 
     if urls:
         # Create and start tasks for each URL
