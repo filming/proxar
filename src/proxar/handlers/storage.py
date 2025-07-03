@@ -39,6 +39,7 @@ class StorageHandler:
         """
         # Set a flag to track unsaved proxies.
         self._dirty: bool = False
+        self._storage_enabled: bool = False
 
         # Set storage dir path and ensure its existence
         if storage_dir is None:
@@ -168,6 +169,8 @@ class StorageHandler:
             ProxarStorageError: If the file cannot be written to disk due to I/O or
                 permission errors.
         """
+        self._storage_enabled = True  # A save operation has been requested.
+
         if not self._dirty:
             logger.debug("No new proxies to save, skipping write to disk.")
             return
@@ -222,7 +225,7 @@ class StorageHandler:
             ProxarStorageError: If the file cannot be written to disk due to I/O or
                 permission errors.
         """
-        if not self._dirty:
+        if not self._dirty or not self._storage_enabled:
             return
 
         all_proxies_data = self._get_all_proxies_as_dict()

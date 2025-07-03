@@ -24,8 +24,12 @@ class FetchHandler:
 
         logger.debug("FetchHandler has been initialized.")
 
-    async def get_proxies(self) -> None:
-        """Fetch and store proxies from various sources."""
+    async def get_proxies(self, save_to_file: bool = True) -> None:
+        """Fetch and store proxies from various sources.
+
+        Args:
+            save_to_file: If True, saves proxies to the storage file.
+        """
         logger.debug("Attempting to fetch proxies from various sources.")
 
         async with aiohttp.ClientSession(headers=HEADERS) as session:
@@ -51,6 +55,7 @@ class FetchHandler:
 
         logger.debug("Fetching proxy process completed.")
 
-        logger.debug("Attempting to store proxies.")
-        await self.storage_handler._save()
-        logger.debug("Proxy storing process has been completed.")
+        if save_to_file:
+            logger.debug("Attempting to store proxies.")
+            await self.storage_handler._save()
+            logger.debug("Proxy storing process has been completed.")
