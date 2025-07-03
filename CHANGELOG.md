@@ -2,6 +2,15 @@
 
 All notable changes to Xify will be documented in this file.
 
+## v0.7.0 (2025-07-03)
+
+### Features
+
+- **storage**: let user get proxies directly
+- **source**: add proxy-list
+- **source**: add open-proxy-list
+- **source**: add free-proxy-list
+
 ## v0.6.1 (2025-07-02)
 
 ### Bug Fixes
